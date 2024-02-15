@@ -1,0 +1,6 @@
+.idea
+*/venv/*
+*/.python-version
+*/poetry.toml
+*/.env
+data

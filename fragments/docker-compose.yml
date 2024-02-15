@@ -1,0 +1,18 @@
+version: "3.8"
+
+x-default: &default
+  restart: unless-stopped
+  image: python:3.12-slim
+  volumes:
+    - "./main.py:/main.py"
+  environment:
+    - PYTHONUNBUFFERED=1
+  command: [ "python", "main.py" ]
+
+services:
+  service-1:
+    <<: *default
+
+  service-2:
+    <<: *default
+    restart: no

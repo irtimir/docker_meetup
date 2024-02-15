@@ -1,0 +1,52 @@
+version: "3.8"
+
+services:
+  db_wo_hc:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+  db_cmp_hc:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready" ]
+      interval: 5s
+      timeout: 60s
+      retries: 5
+  db_emb_hc:
+    build:
+      dockerfile: Dockerfile
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+  db_client_whc:
+    image: postgres:16-alpine
+    depends_on:
+      db_cmp_hc:
+        condition: service_healthy
+      db_emb_hc:
+        condition: service_healthy
+    environment:
+      - PGUSER=postgres
+      - PGPASSWORD=postgres
+    volumes:
+      - "./select-pg.sh:/select-pg.sh"
+    command: >
+      /select-pg.sh db_cmp_hc;
+      /select-pg.sh db_emb_hc;
+  db_client_wfi:
+    image: postgres:16-alpine
+    environment:
+      - PGUSER=postgres
+      - PGPASSWORD=postgres
+      - DATABASE_HOST=db_wo_hc
+      - DATABASE_PORT=5432
+    volumes:
+      - "./entrypoint.sh:/entrypoint.sh"
+      - "./wait-for-it.sh:/wait-for-it.sh"
+      - "./select-pg.sh:/select-pg.sh"
+    entrypoint: /entrypoint.sh
+    command: /select-pg.sh db_wo_hc
